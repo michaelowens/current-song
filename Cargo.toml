@@ -1,0 +1,13 @@
+[package]
+name = "current-song"
+version = "0.1.0"
+authors = ["Michael Owens <michael@owens.nl>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+state = { version = "0.4.2", features = ["tls"] }
+config = "0.10.1"
+serenity = { default-features = false, features = ["client", "gateway", "rustls_backend", "model"] }
+tokio = { version = "0.2", features = ["macros"] }
