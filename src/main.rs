@@ -23,7 +23,7 @@ struct Configuration {
 static CONFIG: Storage<RwLock<Configuration>> = Storage::new();
 
 #[derive(Serialize, Deserialize)]
-struct AtiumRules {
+struct AitumRules {
     status: String,
     data: HashMap<String, String>,
 }
@@ -100,15 +100,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
         aitum_hide_rule_id: "".to_string(),
     };
 
-    println!("Searching for Atium master instance...");
+    println!("Searching for Aitum master instance...");
     configuration.aitum_api = find_aitum_master()
         .await
-        .expect("Unable to find Atium master instance");
+        .expect("Unable to find Aitum master instance");
 
     // Find the Aitum rule ids
     let resp = reqwest::get(configuration.aitum_api.to_owned() + "/aitum/rules")
         .await?
-        .json::<AtiumRules>()
+        .json::<AitumRules>()
         .await?;
 
     configuration.aitum_show_rule_id = resp
@@ -162,7 +162,7 @@ async fn find_aitum_master() -> Option<String> {
         match event {
             ServiceEvent::ServiceResolved(info) => {
                 result = Some(format!("http://{}:7777", info.get_hostname()));
-                println!("Found Atium master instance: {}", info.get_hostname());
+                println!("Found Aitum master instance: {}", info.get_hostname());
                 break;
             }
             _ => {}
