@@ -14,6 +14,7 @@ use serenity::{
 struct Configuration {
     channel_id: String,
     discord_token: String,
+    aitum_enabled: bool,
     aitum_api: String,
     aitum_show_rule: String,
     aitum_hide_rule: String,
@@ -47,7 +48,7 @@ impl EventHandler for Handler {
         fs::write("currentsong.txt", &msg.content).expect("Unable to write file");
         println!("Updated song: {}", msg.content);
 
-        if !config.aitum_hide_rule_id.is_empty() && !config.aitum_show_rule.is_empty() {
+        if config.aitum_enabled {
             let mut rule_id = &config.aitum_show_rule_id;
             if msg.content == "-" {
                 rule_id = &config.aitum_hide_rule_id;
@@ -89,6 +90,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         channel_id: settings
             .get_str("CHANNEL_ID")
             .expect("CHANNEL_ID is required in config.toml"),
+        aitum_enabled: settings
+            .get_bool("AITUM_ENABLED")
+            .expect("AITUM_ENABLED is required in config.toml"),
         aitum_show_rule: settings
             .get_str("AITUM_SHOW_RULE")
             .expect("AITUM_SHOW_RULE is required in config.toml"),
@@ -100,38 +104,40 @@ async fn main() -> Result<(), Box<dyn Error>> {
         aitum_hide_rule_id: "".to_string(),
     };
 
-    println!("Searching for Aitum master instance...");
-    configuration.aitum_api = find_aitum_master()
-        .await
-        .expect("Unable to find Aitum master instance");
+    if configuration.aitum_enabled {
+        println!("Searching for Aitum master instance...");
+        configuration.aitum_api = find_aitum_master()
+            .await
+            .expect("Unable to find Aitum master instance");
 
-    // Find the Aitum rule ids
-    let resp = reqwest::get(configuration.aitum_api.to_owned() + "/aitum/rules")
-        .await?
-        .json::<AitumRules>()
-        .await?;
+        // Find the Aitum rule ids
+        let resp = reqwest::get(configuration.aitum_api.to_owned() + "/aitum/rules")
+            .await?
+            .json::<AitumRules>()
+            .await?;
 
-    configuration.aitum_show_rule_id = resp
-        .data
-        .get(&configuration.aitum_show_rule)
-        .unwrap_or_else(|| {
-            panic!(
-                "Could not find rule in Aitum: {}",
-                configuration.aitum_show_rule
-            )
-        })
-        .to_string();
+        configuration.aitum_show_rule_id = resp
+            .data
+            .get(&configuration.aitum_show_rule)
+            .unwrap_or_else(|| {
+                panic!(
+                    "Could not find rule in Aitum: {}",
+                    configuration.aitum_show_rule
+                )
+            })
+            .to_string();
 
-    configuration.aitum_hide_rule_id = resp
-        .data
-        .get(&configuration.aitum_hide_rule)
-        .unwrap_or_else(|| {
-            panic!(
-                "Could not find rule in Aitum: {}",
-                configuration.aitum_hide_rule
-            )
-        })
-        .to_string();
+        configuration.aitum_hide_rule_id = resp
+            .data
+            .get(&configuration.aitum_hide_rule)
+            .unwrap_or_else(|| {
+                panic!(
+                    "Could not find rule in Aitum: {}",
+                    configuration.aitum_hide_rule
+                )
+            })
+            .to_string();
+    }
 
     CONFIG.set(RwLock::new(configuration));
 
