@@ -11,7 +11,7 @@ use serenity::{
 
 struct Configuration {
     channel_id: String,
-    discord_token: String
+    discord_token: String,
 }
 static CONFIG: LocalStorage<Configuration> = LocalStorage::new();
 
@@ -23,7 +23,7 @@ impl EventHandler for Handler {
         // let channel_id = CONFIG.get().channel_id.parse::<u64>().unwrap();
         let channel_id = match CONFIG.get().channel_id.parse::<u64>() {
             Ok(val) => val,
-            Err(_e) => return
+            Err(_e) => return,
         };
 
         if msg.channel_id.as_u64() != &channel_id {
@@ -40,26 +40,32 @@ impl EventHandler for Handler {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>>  {
-	let mut settings = config::Config::default();
+async fn main() -> Result<(), Box<dyn Error>> {
+    let mut settings = config::Config::default();
     settings
         // Add in `./config.toml`
-        .merge(config::File::with_name("config.toml")).unwrap()
+        .merge(config::File::with_name("config.toml"))
+        .unwrap()
         // Add in settings from the environment (with a prefix of APP)
         // Eg.. `APP_DEBUG=1 ./target/app` would set the `debug` key
-        .merge(config::Environment::with_prefix("APP")).unwrap();
-
+        .merge(config::Environment::with_prefix("APP"))
+        .unwrap();
 
     CONFIG.set(move || Configuration {
-        discord_token: settings.get_str("DISCORD_TOKEN").expect("DISCORD_TOKEN is required in config.toml"),
-        channel_id: settings.get_str("CHANNEL_ID").expect("CHANNEL_ID is required in config.toml")
+        discord_token: settings
+            .get_str("DISCORD_TOKEN")
+            .expect("DISCORD_TOKEN is required in config.toml"),
+        channel_id: settings
+            .get_str("CHANNEL_ID")
+            .expect("CHANNEL_ID is required in config.toml"),
     });
 
     // Create a new instance of the Client, logging in as a bot. This will
     // automatically prepend your bot token with "Bot ", which is a requirement
     // by Discord for bot users.
     let token = &CONFIG.get().discord_token;
-    let mut client = Client::builder(token)
+    let intents = GatewayIntents::non_privileged() | GatewayIntents::MESSAGE_CONTENT;
+    let mut client = Client::builder(token, intents)
         .event_handler(Handler)
         .await
         .expect("Err creating client");
