@@ -1,5 +1,4 @@
 extern crate config;
-use mdns_sd::{ServiceDaemon, ServiceEvent};
 use serde::{Deserialize, Serialize};
 use state::Storage;
 use std::fs;
@@ -105,14 +104,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
     };
 
     if configuration.aitum_enabled {
-        println!("Searching for Aitum master instance...");
-        configuration.aitum_api = find_aitum_master()
-            .await
-            .expect("Unable to find Aitum master instance");
+        configuration.aitum_api = settings
+            .get_str("AITUM_API")
+            .expect("AITUM_API is required in config.toml");
 
         // Find the Aitum rule ids
         let resp = reqwest::get(configuration.aitum_api.to_owned() + "/aitum/rules")
-            .await?
+            .await
+            .unwrap_or_else(|_| panic!("Failed to communicate with Aitum"))
             .json::<AitumRules>()
             .await?;
 
@@ -156,25 +155,4 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
-}
-
-async fn find_aitum_master() -> Option<String> {
-    let mdns = ServiceDaemon::new().expect("Failed to create daemon");
-    let service_type = "_pebble._tcp.local.";
-    let receiver = mdns.browse(service_type).expect("Failed to browse");
-
-    let mut result: Option<String> = None;
-    while let Ok(event) = receiver.recv_async().await {
-        match event {
-            ServiceEvent::ServiceResolved(info) => {
-                result = Some(format!("http://{}:7777", info.get_hostname()));
-                println!("Found Aitum master instance: {}", info.get_hostname());
-                break;
-            }
-            _ => {}
-        }
-    }
-    let _ = mdns.shutdown();
-
-    return result;
 }
