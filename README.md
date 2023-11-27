@@ -1,6 +1,6 @@
 # current-song
 
-A discord bot to save the last message of a given discord channel to a text file. Also supports calling an [Aitum)(https://aitum.tv/) rule on change.
+A discord bot to save the last message of a given discord channel to a text file. Also supports calling an [Aitum](https://aitum.tv/) rule on change.
 
 ## Configuration
 
